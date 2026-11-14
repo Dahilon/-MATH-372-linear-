@@ -1,0 +1,217 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\title{Linear Regression Notes}
+\author{Conor Falvey}
+
+\usepackage{natbib}
+\usepackage{graphicx}
+
+\begin{document}
+
+\maketitle
+
+\section{Thursday August 22}
+\textbf{Unsupervised learning:} Analyzes structures of X. 
+Supervised Learning: Also have a label or response for every observation.
+$y = (y_1, y_2, \ldots, y_n)$\\
+\textbf{Goal:} Identify a function $f$ that relates $y$ to $x$: $y = f(x) + \epsilon$
+The choice of $f(x)$ depends on several objectives:
+\begin{itemize}
+    \item Explanatory or Predictive performance?
+    \begin{itemize}
+        \item Trade-off on outputs
+    \end{itemize}
+    \item Parametric or non-parametric?
+    \begin{itemize}
+        \item Parametric: Characterized by parameters, Summary of a population
+        \item Non-parametric: No parameters. (Technically infinite)
+    \end{itemize}
+    \item Functional or Statistical Relationship?
+    \begin{itemize}
+        \item Functional Relationship: $y = mx + b$. Function describes a relationship. It has a deterministic output.
+        \item Statistical Relationship: $y = mx + b + \epsilon$. Involves randomness.
+        \begin{itemize}
+            \item $\epsilon$ is our uncertainty in the relationship we chose.
+            \item $\epsilon$ is often referred to as error.
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+\textbf{Overall Question:} How do we choose $f(x)$?
+The key to data science and modeling is answering this question with data in a 'smart' way. In this class we'll focus on 'linear' families of models. Why linear?
+\begin{itemize}
+    \item Easy to understand
+    \begin{itemize}
+        \item Highly interpretable
+        \item Explanatory inferences are straightforward
+    \end{itemize}
+    \item Lines can be used to approximate more complex relationships (Think of Taylor expansions.)
+\end{itemize}
+When choosing a model $f$, we are usually concerned with one of two primary goals: \textbf{prediction} or \textbf{inference}. It is possible to choose a model that is reasonably well-calibrated for both prediction and inference.\\
+
+\textbf{Prediction:}\\
+\textbf{Main Objective:} Predicting new $Y$ using $\hat{Y} = \hat{f}(X)$\\
+\textbf{Model choice:} Models that have the highest prediction performance. Often 'black-box methods, which have no concern with the exact form of $\hat{f}$\\
+
+\textbf{Inference:}\\
+\textbf{Main Objective:} Understand the relationship between $X$ and $Y$:
+\begin{itemize}
+    \item Variable Selection: What predictors are most associated with the response?
+    \item Focus on functional relationships of $Y$ and $X$
+    \item Strive for parsimony. KISS: Keep It Simple Stupid
+\end{itemize}
+Model choice: Models that have high interpretability. Often parametric methods, which explicitly dictate the form of $\hat{f}$ via parameters.\\
+
+
+\textbf{Parametric Methods:}
+\begin{itemize}
+    \item Makes an assumption about the functional form of $f$.
+    \item Identifying $f$ reduces the estimation of a set of parameters.
+    \item Often simpler than estimating the entire function.
+    \item Caution! Can result in over-simplistic models.
+    \item E.g. linear regression, logistic regression\\
+\end{itemize}
+
+\textbf{Non-parametric Methods:}
+\begin{itemize}
+    \item Not restricted to assumptions about the functional form of $f$.
+    \item Can accurately fit a wider range of possible shapes/forms of $f$.
+    \item Often requires a very large number of observations.
+    \item Caution: Can overfit data quickly.
+    \item E.g. Polynomial splines, smoothing splines\\
+\end{itemize}
+\textbf{Question:}
+How well does your method perform on new data, i.e. data you have not seen during learning?
+E.g. You get a new data instance
+$X_{new} = ($no history of cancer, smoker, male$)$
+Can you asses the goodness of your throat cancer predictor?\\
+\textbf{Past Observed Data:}\\
+$(x_{1}, y_{1}), (x_{2}, y_{2},\ldots)$\\
+Previous Data
+$X = ($History of cancer, smoker, sex$)$\\
+$y = \{$0 if no cancer, 1 if cancer$\}$\\
+\textbf{New Data:}\\
+Only with features: $X_{new}$
+Without having $y_{new}$, how can we assess the performance of your prediction $\hat{y}_{new}$?\\
+\textbf{Options:}
+\begin{enumerate}
+    \item If we could get a true diagnosis, $y_{new}$, then measure the difference $(y_{new} - \hat{y}_{new})^2$.
+    \item If we can't get $y_{new}$, then use cross-validation from past data. Go back to past data and use it to assess current performance.
+\end{enumerate}
+\textbf{Training vs. Test Set Validation}
+\begin{enumerate}
+    \item Divide the data $(X, Y)$ into two sets:
+    \begin{itemize}
+        \item Training Set: $(X_{train}, Y_{train})$
+        \item Test set: $(X_{test}, Y_{test})$
+    \end{itemize}
+    \item Use training set to produce a predictor $\hat{f}()$ via $y_{train} = f(X_{train}) + \epsilon$. Learn/train a model on training set $\hat{f}$.
+    \item Use the test set to evaluate the performance of predictor: $\hat{y}_{test} = \hat{f}(X_{test})$. Access the difference between $\hat{y}_{test}$ and $y_{test}$.
+\end{enumerate}
+\textbf{Choosing Training and Test Set}
+\begin{enumerate}
+    \item Random Sampling: Choose a test set at random from data and test all models on the same set.
+    \item k-fold cross-validation: Split data into k subsets. In turn, treat each subset as held-out and train on the remaining. Performance is evaluated as the average performance of each k test sets. (Compute difference across each iteration and average over all iterations.)
+    \item Leave-one-out cross-validation: Special case of k-fold cross validation where $k = n$ and test sets are of size 1.
+\end{enumerate}
+\textbf{Important considerations:}
+Never let information from the test set make its way into the training data! This is the \#1 most common mistake in model assessment.\\
+
+Difference between \textbf{prediction and estimation error}:
+\begin{enumerate}
+    \item Prediction error: Error associated with predictions on the test set $y_{test} = \hat{y}_{test}$
+    \item Estimation error: Error associated with estimates in the training set $y_{train} = \hat{y}_{train}$
+    \item By Splitting the data in cross-validation, the variance of the estimated regression coefficients can increase if the data set is not large
+    \item Once a model has been validated and compared against other potential models, we typically use the entire data set for estimating the final regression model
+    \item Sometimes the training and test sets are chosen in a systematic way (e.g. up-sampling and down-sampling) so as to avoid bias in the analysis.
+\end{enumerate}
+When running cross-validation, there are \textbf{2 types of error:}
+\begin{enumerate}
+    \item Training error aka estimation error $(y_{train} - \hat{y}_{train})^2$. The error associated with estimation/interpolation.
+    \item Test error $(y_{test} - \hat{y}_{test})^2$. The error associated with prediction and extrapolation.
+\end{enumerate}
+\textbf{Mean Squared Error:}\\
+\begin{center}
+    MSE$(f) = \frac{1}{n}\sum^{n}_{i = 1}(y_{i} - f(x_{i}))^2$\\
+\end{center} You can use any positive even exponent, we just want all summation parts to end positive. The MSE measure acts as a yardstick for model assessment for continuous data.\\
+Note: In prediction, the mean squared difference between $y_{new}$ and $\hat{f}(x_{new})$ is known as the \textbf{mean square prediction error (MSPE)}.\\
+Note: There are many choices for measuring accuracy. The choice depends on the possible values of $y$.\\
+\textbf{Assessing Model Accuracy:}\\
+Let $\Omega$ = index (which rows of X) that represent the training set.\\
+Let $\Theta = \Omega^{c}$ = index that represent the test set.\\
+\textbf{General Approach:}\\
+Estimate model $\hat{f}$:
+\begin{center}
+$\hat{f} = argmin_{f}(\frac{1}{|\Omega|}\sum_{j \in \Omega}(y_{j} - f(x_{j}))^2) = argmin_{f}($MSE$(f))$
+\end{center}
+Evaluate model on test set:
+\begin{center}
+MSPE$(\hat{f}) = \frac{1}{|\Theta|}sum_{j \in \Theta}(y_{j} - \hat{f}(x_{j}))^2$\\
+\end{center}
+\textbf{MSE vs. MSPE: Noticeable Trends}
+\begin{itemize}
+    \item Fact: $E[$MSPE$(f(X_{test})] \geq E[$MSE$(f(X_{train}))]]$
+    \item Trend 1: After a certain point in complexity, there is an inverse relationship between MSE and MSPE. We say that a model is overfitting the data when we are in this range of complexity.
+    \item Trend 2: The MSE tends to decrease as complexity increases.
+\end{itemize}
+\textbf{Bias-Variance Trade-Off:}
+\begin{itemize}
+    \item An important means of understanding \begin{center}
+        MSPE$(\hat{f}) = \frac{1}{|\Theta|}sum_{j \in \Theta}(y_{j} - \hat{f}(x_{j}))^2$
+    \end{center} 
+    comes from the following decomposition for new data $(X_{0}, y_{0})$: 
+    \begin{center}
+        $E[$MSPE$(\hat{f})] = E[(y_{0} - \hat{f}(X_{0})]^2 + Var(\hat{f}(X_{0})) + Var(\epsilon)$ = $Bias(\hat{f}(X_{0}))^2 + Var(\hat{f}(X_{0})) + Var(\epsilon)$
+    \end{center}
+    \item Result: the expected MSPE of a model is a function of the bias and variance of $\hat{f}$, as well as the variance of the error term $\epsilon$.
+\end{itemize}
+\textbf{Components of MSPE:}
+\begin{enumerate}
+    \item $Bias(\hat{f}(X_{0}))^2$: quantifies the distance between the model and the truth. Non-negative. Generally decreases as the model becomes more complex.
+    \item $Var(\hat{f}(X_{0}))$: quantifies the variance of the model. Non-negative. High variance implies that the model is highly sensitive to small changes in the training data. Generally increases as the model becomes more complex.
+    \item $Var(\epsilon)$: variance of the error terms. Non-negative. Is not affected by the complexity of the model, constant.
+\end{enumerate}
+\textbf{Bias-Variance Trade-Off:}\\
+Resulting Trade-Off: Since $Var(\epsilon)$ is constant, we'd like to choose a model with minimum bias and minimum variance.\\
+Primary Issues:
+\begin{enumerate}
+    \item Both the bias and variance terms are non-negative
+    \item The bias and variance terms are often inversely related
+    \item The bias and variance change at different rates
+\end{enumerate}
+\textbf{Solution:}\\
+Decide what is important in the application (prediction vs. interpretation) and choose model accordingly. Seek optimal model complexity of possible.\\
+
+\textbf{Regression Model Function:}
+\begin{itemize}
+    \item Simple Linear Regression
+    \begin{itemize}
+        \item Simple because we consider the relationship between a single feature, $x_{1}$, and response, $y_{1}$.
+        \begin{itemize}
+            \item Model $y_{i} = \beta_{0} + \beta_{1}x_{i} + \epsilon_{i}$
+            \item Data: Pairs $(x_{1}, y_{1}), (x_{2}, y_{2}), \ldots, (x_{n}, y_{n})$
+            \item Assumptions (1):
+            \begin{itemize}
+                \item $E[\epsilon_{i}] = 0$
+                \item $Var(\epsilon_{i}) = \sigma$
+                \item $Cov(\epsilon_{i}, \epsilon_{j}) = 0$
+            \end{itemize}
+            \item Assumptions (2):
+            \begin{itemize}
+                \item $E_{i} \stackrel{IID}{\sim} N(0, \sigma^2)$. $E_{i}$ = model error on observation i.
+            \end{itemize}
+            \item Components of Simple Linear Regression Model:
+            \begin{itemize}
+                \item $y_{1}, \ldots, y_{n}$ are continuous responses
+                \item $x_{1}, \ldots, x_{n}$ are feature values
+                \item $\beta_{0}$ is the intercept of the model
+                \item $\beta_{2}$ is the effect on y from a single unit change in $x$
+                \item $\epsilon$ is the error term
+                \item $\sigma^2$ is the variance of the error
+                \item $\beta_{0}, \beta_{1}, \sigma^2$ are unknown parameters of the model
+            \end{itemize}
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+\end{document}
