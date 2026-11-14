@@ -1,0 +1,188 @@
+---
+title: "Housing Prices"
+author: "James D. Wilson"
+date: '2026-09-29'
+output: html_document
+---
+
+# Load the data
+
+```{r}
+housing_data <- read.table("/Users/wilsonj41/Desktop/Fall 2026/Teaching/MATH 372/MATH 372 2025/housing.txt", header = TRUE, sep = ",", stringsAsFactors = TRUE)
+
+```
+
+# Get the response variable (Sale.price)
+
+```{r}
+Sale.price <- housing_data$SalePrice
+hist(Sale.price, main = "Sale Price")
+summary(Sale.price)
+```
+
+# Quick Review of predictor variables
+```{r}
+summary(housing_data)
+
+```
+In the above, we noticed that a lot of NAs actually mean "None" (Garage variables, Fence, Alley, FireplaceQu) and there were some variables that had an extreme class imbalance (particularly, MiscFeature). Importantly, if we wouldn't have looked at these summaries, we would have omitted a lot of useful information. Note the following, which we will not proceed with:
+
+```{r}
+bad_idea <- na.omit(housing_data)
+#woah! this gave us 0 observations!
+```
+
+# Replace NAs with "None" and get rid of MiscFeature from data
+
+```{r}
+
+levels(housing_data$GarageType) <- c(levels(housing_data$GarageType), "None")
+housing_data$GarageType[is.na(housing_data$GarageType)] <- "None"
+
+levels(housing_data$GarageFinish) <- c(levels(housing_data$GarageFinish), "None")
+housing_data$GarageFinish[is.na(housing_data$GarageFinish)] <- "None"
+
+levels(housing_data$GarageCars) <- c(levels(housing_data$GarageCars), "None")
+housing_data$GarageCars[is.na(housing_data$GarageCars)] <- "None"
+
+levels(housing_data$GarageQual) <- c(levels(housing_data$GarageQual), "None")
+housing_data$GarageQual[is.na(housing_data$GarageQual)] <- "None"
+
+levels(housing_data$GarageCond) <- c(levels(housing_data$GarageCond), "None")
+housing_data$GarageCond[is.na(housing_data$GarageCond)] <- "None"
+
+levels(housing_data$Fence) <- c(levels(housing_data$Fence), "None")
+housing_data$Fence[is.na(housing_data$Fence)] <- "None"
+
+levels(housing_data$FireplaceQu) <- c(levels(housing_data$FireplaceQu), "None")
+housing_data$FireplaceQu[is.na(housing_data$FireplaceQu)] <- "None"
+
+levels(housing_data$Alley) <- c(levels(housing_data$Alley), "None")
+housing_data$Alley[is.na(housing_data$Alley)] <- "None"
+
+#omit MiscFeature, and ID
+features_to_remove <- c(which(names(housing_data) == "MiscFeature"), which(names(housing_data) == "Id"))
+
+housing_data <- housing_data[, -features_to_remove]
+```
+
+# Now, remove NAs using na.omit
+```{r}
+cleaned_data <- na.omit(housing_data)
+#still only 6 observations. Let's look back over the data. We noticed a few more variables to remove
+
+features_to_remove <- c(which(names(housing_data) == "PoolQC"), which(names(housing_data) == "PoolArea"), which(names(housing_data) == "GarageCars"))
+
+housing_data <- housing_data[, -features_to_remove]
+
+cleaned_data2 <- na.omit(housing_data) #better, but let's go back LotFrontage and change NAs to 0
+
+housing_data$LotFrontage[is.na(housing_data$LotFrontage)] <- 0
+
+cleaned_data3 <- na.omit(housing_data) #awesome, 1338 observations
+
+#start with this cleaned_data3 on your analysis.
+```
+
+IGNORE BEYOND THIS POINT (for now)
+```{r}
+#create a design matrix, using the model.matrix function
+
+x <- model.matrix(SalePrice ~., data = cleaned_data3)
+dim(x) #1338 observations and 246 variables. Note the above function automatically made dummy variables for every categorical variable (yay!)
+
+y <- cleaned_data3$SalePrice
+```
+
+# Now, let's run Lasso to perform variable selection
+
+```{r}
+library(glmnet)
+grid.lambda <- 10^seq(10, -2, length = 100)
+set.seed(1) #for reproducability
+#Randomly select a training and test set.
+#Here, we leave half of the data out for later model assessment
+train <- sample(1:nrow(x), round(.9*nrow(x)))
+test <- (-train)
+y.train <- y[train]
+y.test <- y[test]
+#making a hold out set
+
+set.seed(1) #for reproducibility
+cv.out <- cv.glmnet(x[train, ], y.train, alpha = 1) #alpha = 1 means Lasso
+plot(cv.out)
+
+#Find the best lambda value
+best.lambda <- cv.out$lambda.min
+best.lambda
+plot(cv.out)
+abline(v = log(best.lambda), col = "blue", lwd = 2)
+
+lasso.model.train <- glmnet(x[train, ], y.train, alpha = 1, lambda = grid.lambda) #this step is an intermediary step just to create a Lasso object that we can use to predict
+
+lasso.pred <- predict(lasso.model.train, s = best.lambda, newx = x[test, ])
+mspe.lasso <- mean((lasso.pred - y.test)^2)
+mspe.lasso #958660538
+
+#look at important variables
+
+final.model <- glmnet(x, y, alpha = 1, lambda = best.lambda)
+
+coefficients_lasso <- coef(final.model)
+
+coefficients_lasso <- coefficients_lasso[, 1]
+important_vars <- coefficients_lasso[coefficients_lasso != 0]
+
+indx_important <- which(coefficients_lasso != 0) #which columns of x should I use to get an OLS?
+```
+
+#run ordinary least squares on the entire data set
+We have to shift the indices of our variables because `glmnet` outputs and expects an intercept term. `lm` on the other hand, does not. So we adjust for this by shifting our variables over by 1. We could also get rid of the first variable, but it's OK if you do not.
+```{r}
+indx_important <- indx_important - 1
+indx_important[1] <- 1
+regression1 <- lm(y ~ ., data = data.frame(x[, indx_important]))
+
+sum_reg <- summary(regression1)
+
+p_values <- sum_reg$coefficients[, 4] #the 4th column of the coefficients data frame
+
+sort(p_values, decreasing = FALSE) #evaluate these in order and report which variables are possible to change. An example - Kitchen Quality is in the top and adding wood shingles for the roof.
+
+```
+
+#which variables are most associated?
+```{r}
+
+morty_data <- read.csv("/Users/wilsonj41/Desktop/Desktop Fall 2024/Courses/MATH 372/Morty.txt", header = TRUE)
+morty_data <- morty_data[, -1]
+
+housing_data <- read.table("/Users/wilsonj41/Desktop/Desktop Fall 2024/Courses/MATH 372/housing.txt", header = TRUE, sep = ",", stringsAsFactors = TRUE)
+
+
+features_to_remove <- c(which(names(housing_data) == "MiscFeature"), which(names(housing_data) == "Id"))
+
+housing_data <- rbind(housing_data, morty_data)
+housing_data <- housing_data[, -features_to_remove]
+
+
+features_to_remove <- c(which(names(housing_data) == "PoolQC"), which(names(housing_data) == "PoolArea"), which(names(housing_data) == "GarageCars"))
+
+housing_data <- housing_data[, -features_to_remove]
+
+#cleaned_data2 <- na.omit(housing_data) #better, but let's go back LotFrontage and change NAs to 0
+
+housing_data$LotFrontage[is.na(housing_data$LotFrontage)] <- 0
+
+cleaned_data3 <- na.omit(housing_data) #awesome, 1338 observations
+
+
+x <- model.matrix(SalePrice ~., data = cleaned_data3)
+dim(x)
+#morty_data <- morty_data[, 3:81] #get rid of X and Id and Sale Price
+colnames(x)
+
+#reformat the morty data to be the same as your training data x
+
+morty_data2 <- model.matrix(Sale.price ~ ., data = morty_data)
+```
