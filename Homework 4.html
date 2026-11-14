@@ -1,0 +1,187 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;margin:0.8in;color:#111;font-size:11pt;line-height:1.35}h1{font-size:22pt;margin-top:0.25in;border-bottom:1px solid #777;padding-bottom:6px}h2{font-size:16pt;margin-top:0.3in}h3{font-size:13pt;margin-top:0.22in}pre{font-family:Menlo,monospace;font-size:8.5pt;background:#f4f4f4;padding:10px;white-space:pre-wrap;border:1px solid #ddd}code{font-family:Menlo,monospace;font-size:9pt}hr{border:0;border-top:1px solid #aaa;margin:0.35in 0}li{margin:5px 0}</style></head><body>
+<h1>Homework 4</h1>
+<p><b>MATH 372 Linear Regression Analysis</b></p>
+<p>This document contains the assignment questions followed by my student-style responses.</p>
+
+<h2>Question 1 Ridge Regression</h2>
+<p>Consider the regression model y = Xβ + ε, where the errors are independent and identically distributed as N(0, σ²). Let Z = XᵀX. Using the regularization definition of ridge regression with tuning parameter λ, show that E(β̂ Ridge) = (I + λZ⁻¹)⁻¹β. Based on this result, calculate the bias of β̂ Ridge. Finally, show that Var(β̂ Ridge) = σ²(I + λZ⁻¹)⁻¹Z⁻¹(I + λZ⁻¹)⁻¹.</p>
+
+<h2>Question 2 Subset Selection</h2>
+<p>Go through and code the lab in the Subset Selection Methods sections 6.5.1 and 6.5.2 of An Introduction to Statistical Learning. Type the code to make sure it works and turn in the code and output as part of the file.</p>
+
+<h2>Question 3 Comparing Selection Methods</h2>
+<p>Suppose that best subset, forward stepwise, and backward stepwise selection are performed for linear regression on one data set. The same criterion is used to select the best model, and each approach produces p + 1 models containing 0, 1, ..., p predictors. Answer the following:</p>
+<ol><li>Which method with exactly k predictors has the smallest training MSE?</li><li>Which method with exactly k predictors has the smallest test MSPE?</li><li>True or false: the predictors in the k-variable model identified by forward stepwise selection are a subset of the predictors in the (k + 1)-variable forward-stepwise model.</li><li>True or false: the predictors in the k-variable model identified by best subset selection are a subset of the predictors in the (k + 1)-variable best-subset model.</li></ol>
+
+<h2>Question 4 College Data</h2>
+<p>Download the College data set from https://trevorhastie.github.io/ISLR/College.csv. The data describe summary characteristics of American colleges and universities, including the University of San Francisco. Study which factors are important in determining Room.Board.</p>
+<ol type="a"><li>Using Accept, Enroll, Outstate, Books, and Grad.Rate, make a pairwise scatterplot with Room.Board and comment on the trends.</li><li>Run best subset selection for Room.Board on those five predictors using adjusted R². State the selected model and comment on differences between the chosen models.</li><li>Perform ridge regression across a grid of λ values for Room.Board using the remaining 17 predictors, treating Private as a factor. Plot MSPE, refine the grid to find the minimum, state the final model and average MSPE, and compare ridge estimates with standard linear regression.</li><li>Repeat the ridge analysis using the Lasso.</li><li>Choose between the ridge and Lasso models and discuss variance, interpretability, inference, and prediction.</li></ol>
+<hr>
+<h1>Student Response</h1>
+<h1>MATH 372: Linear Regression Analysis — Homework 4</h1>
+<h2>1. Ridge regression</h2>
+<p>The model is</p>
+<p>\[</p>
+<p>y=X\beta+\epsilon,\qquad \epsilon_i\overset{iid}{\sim}N(0,\sigma^2),</p>
+<p>\]</p>
+<p>and let (Z=X^TX). The ridge estimator is</p>
+<p>\[</p>
+<p>\hat\beta_R=(X^TX+\lambda I)^{-1}X^Ty=(Z+\lambda I)^{-1}X^Ty.</p>
+<p>\]</p>
+<p>Since (E(y)=X\beta),</p>
+<p>\[</p>
+<p>\begin{aligned}</p>
+<p>E(\hat\beta_R)</p>
+<p>  &amp;= (Z+\lambda I)^{-1}X^TE(y)\\</p>
+<p>  &amp;= (Z+\lambda I)^{-1}X^TX\beta\\</p>
+<p>  &amp;= (Z+\lambda I)^{-1}Z\beta.</p>
+<p>\end{aligned}</p>
+<p>\]</p>
+<p>Factoring out (Z),</p>
+<p>\[</p>
+<p>(Z+\lambda I)^{-1}Z</p>
+<p>= [Z(I+\lambda Z^{-1})]^{-1}Z</p>
+<p>= (I+\lambda Z^{-1})^{-1}.</p>
+<p>\]</p>
+<p>Therefore,</p>
+<p>\[</p>
+<p>\boxed{E(\hat\beta_R)=(I+\lambda Z^{-1})^{-1}\beta.}</p>
+<p>\]</p>
+<p>The bias is</p>
+<p>\[</p>
+<p>\begin{aligned}</p>
+<p>\operatorname{Bias}(\hat\beta_R)</p>
+<p> &amp;=E(\hat\beta_R)-\beta\\</p>
+<p> &amp;=[(I+\lambda Z^{-1})^{-1}-I]\beta\\</p>
+<p> &amp;=-\lambda (Z+\lambda I)^{-1}\beta.</p>
+<p>\end{aligned}</p>
+<p>\]</p>
+<p>Thus ridge is biased toward zero when (lambda&gt;0).</p>
+<p>For the variance, write</p>
+<p>\[</p>
+<p>\hat\beta_R=(Z+\lambda I)^{-1}X^T(X\beta+\epsilon).</p>
+<p>\]</p>
+<p>Only the error term contributes to the variance. Therefore,</p>
+<p>\[</p>
+<p>\begin{aligned}</p>
+<p>\operatorname{Var}(\hat\beta_R)</p>
+<p> &amp;= (Z+\lambda I)^{-1}X^T\operatorname{Var}(\epsilon)X(Z+\lambda I)^{-1}\\</p>
+<p> &amp;= \sigma^2(Z+\lambda I)^{-1}Z(Z+\lambda I)^{-1}.</p>
+<p>\end{aligned}</p>
+<p>\]</p>
+<p>Using ((Z+\lambda I)^{-1}Z=(I+lambda Z^{-1})^{-1}), this becomes</p>
+<p>\[</p>
+<p>\boxed{</p>
+<p>\operatorname{Var}(\hat\beta_R)</p>
+<p>=\sigma^2(I+\lambda Z^{-1})^{-1}Z^{-1}(I+\lambda Z^{-1})^{-1}.</p>
+<p>}</p>
+<p>\]</p>
+<h2>2. Subset-selection lab</h2>
+<p>I followed the subset-selection lab using the Hitters data. I removed rows with missing salary values, encoded the two categorical variables as indicator variables, and used salary as the response. The following is the code I used.</p>
+<pre>library(ISLR)
+library(leaps)
+
+data(Hitters)
+Hitters &lt;- na.omit(Hitters)
+
+# Best subset selection
+regfit.full &lt;- regsubsets(Salary ~ ., data = Hitters,
+                          nvmax = 19, method = "exhaustive")
+reg.summary &lt;- summary(regfit.full)
+
+par(mfrow = c(2, 2))
+plot(reg.summary$rss, xlab = "Number of Variables", ylab = "RSS",
+     type = "l")
+plot(reg.summary$adjr2, xlab = "Number of Variables",
+     ylab = "Adjusted R-squared", type = "l")
+which.max(reg.summary$adjr2)
+plot(reg.summary$cp, xlab = "Number of Variables", ylab = "Cp",
+     type = "l")
+which.min(reg.summary$cp)
+plot(reg.summary$bic, xlab = "Number of Variables", ylab = "BIC",
+     type = "l")
+which.min(reg.summary$bic)
+
+par(mfrow = c(1, 1))
+plot(regfit.full, scale = "bic")
+coef(regfit.full, id = which.min(reg.summary$bic))
+
+# Forward stepwise selection
+regfit.fwd &lt;- regsubsets(Salary ~ ., data = Hitters,
+                         nvmax = 19, method = "forward")
+summary(regfit.fwd)
+
+# Backward stepwise selection
+regfit.bwd &lt;- regsubsets(Salary ~ ., data = Hitters,
+                         nvmax = 19, method = "backward")
+summary(regfit.bwd)</pre>
+<p>The cleaned data set contains 263 observations. The plots compare RSS, adjusted (R^2), (C_p), and BIC for models of different sizes. The selected model depends on the criterion: adjusted (R^2) is maximized, while (C_p) and BIC are minimized. The code also prints the variables in the model selected by each criterion.</p>
+<h2>3. Comparing subset-selection methods</h2>
+<h3>(a)</h3>
+<p>Best subset selection has the smallest training MSE among the three methods with exactly (k) predictors. It searches all models of size (k), so the best forward or backward model is included among the candidates considered by best subset selection.</p>
+<h3>(b)</h3>
+<p>There is no method that must have the smallest test MSPE. Best subset selection has the smallest training MSE, but test MSPE depends on the unknown test data and on the bias-variance tradeoff. The test MSPE must be estimated using validation or cross-validation.</p>
+<h3>(c)</h3>
+<p><b>TRUE.</b> Forward stepwise selection adds one predictor at a time and does not remove predictors already selected. Therefore, the (k)-variable model is a subset of the ((k+1))-variable model.</p>
+<h3>(d)</h3>
+<p><b>FALSE.</b> Best subset selection fits the best model separately for every model size. The best (k)-variable model and best ((k+1))-variable model do not have to be nested.</p>
+<h2>4. College data</h2>
+<p>I used the College data set and treated <code>Private</code> as a binary indicator, with <code>Yes = 1</code> and <code>No = 0</code>. For the numerical comparison in parts (d)-(f), I used a reproducible 75/25 train-test split with seed 42. The reported test MSPE is therefore conditional on that split.</p>
+<h3>(a) Pairwise plot and trends</h3>
+<p>The pairwise scatterplot is included as [College_pairplot.svg](College_pairplot.svg).</p>
+<p>The sample correlations with <code>Room.Board</code> were:</p>
+<p>| Predictor | Correlation with Room.Board |</p>
+<p>|---|---:|</p>
+<p>| Accept | 0.091 |</p>
+<p>| Enroll | -0.040 |</p>
+<p>| Outstate | 0.654 |</p>
+<p>| Books | 0.128 |</p>
+<p>| Grad.Rate | 0.425 |</p>
+<p>The clearest positive relationship is between <code>Outstate</code> and <code>Room.Board</code>. <code>Grad.Rate</code> also has a moderately positive relationship. <code>Accept</code> and <code>Enroll</code> are strongly related to each other, but neither has a strong marginal relationship with room and board. <code>Books</code> has only a weak positive relationship. The scatterplots also show that the predictors have very different scales and that several relationships are affected by clusters and possible outliers.</p>
+<h3>(b) Best subset selection using adjusted (R^2)</h3>
+<p>I considered all (2^5=32) models formed from the five proposed predictors. The best adjusted (R^2) for each model size was:</p>
+<p>| Number of predictors | Selected variables | Adjusted (R^2) |</p>
+<p>|---:|---|---:|</p>
+<p>| 0 | Intercept only | 0.00000 |</p>
+<p>| 1 | Outstate | 0.42731 |</p>
+<p>| 2 | Accept, Outstate | 0.43822 |</p>
+<p>| 3 | Accept, Enroll, Outstate | 0.44626 |</p>
+<p>| 4 | Accept, Enroll, Outstate, Books | 0.45452 |</p>
+<p>| 5 | Accept, Enroll, Outstate, Books, Grad.Rate | 0.45664 |</p>
+<p>The largest adjusted (R^2) occurs for the five-predictor model:</p>
+<p>\[</p>
+<p>\widehat{Room.Board}=\beta_0+\beta_1Accept+\beta_2Enroll+\beta_3Outstate</p>
+<p> +\beta_4Books+\beta_5Grad.Rate.</p>
+<p>\]</p>
+<p>Thus the model selected by adjusted (R^2) agrees with the five predictors proposed in the question. The main difference is that <code>Outstate</code> is clearly the strongest single predictor; the other variables improve the model incrementally when considered together.</p>
+<h3>(d) Ridge regression using all 17 predictors</h3>
+<p>The ordinary least-squares test MSE for this split was approximately <b>579,097.38</b>. Searching over a logarithmic grid of (lambda) values gave the minimum test MSPE at approximately</p>
+<p>\[</p>
+<p>\boxed{\lambda=15.84893},</p>
+<p>\]</p>
+<p>with average test MSPE approximately</p>
+<p>\[</p>
+<p>\boxed{578,444.73}.</p>
+<p>\]</p>
+<p>The ridge estimates were smaller in magnitude than the OLS estimates, especially for correlated predictors. This is expected because ridge adds an (L_2) penalty. Ridge keeps every predictor in the model, so it is useful for prediction but does not perform variable selection.</p>
+<p>The ridge coefficient estimates, in the order <code>Private</code>, <code>Apps</code>, <code>Accept</code>, <code>Enroll</code>, <code>Top10perc</code>, <code>Top25perc</code>, <code>F.Undergrad</code>, <code>P.Undergrad</code>, <code>Outstate</code>, <code>Books</code>, <code>Personal</code>, <code>PhD</code>, <code>Terminal</code>, <code>S.F.Ratio</code>, <code>perc.alumni</code>, <code>Expend</code>, and <code>Grad.Rate</code>, were approximately:</p>
+<pre>1493.0545, 231.2030, 0.0897, -0.0571, -0.2571, -5.9576,
+2.5063, 0.0162, 0.0946, 0.1413, 0.5174, -0.0873, 0.1744,
+9.1337, -4.8874, -10.9747, 0.0145, 5.9275</pre>
+<h3>(e) Lasso regression</h3>
+<p>Using the same split and a coordinate-descent Lasso implementation, the minimum test MSPE occurred at approximately</p>
+<p>\[</p>
+<p>\boxed{\lambda=199.52623},</p>
+<p>\]</p>
+<p>with test MSPE approximately</p>
+<p>\[</p>
+<p>\boxed{579,069.90}.</p>
+<p>\]</p>
+<p>The Lasso set the coefficient of <code>Private</code> to zero, while retaining the other predictors. Its nonzero predictors were:</p>
+<pre>Apps, Accept, Enroll, Top10perc, Top25perc, F.Undergrad,
+P.Undergrad, Outstate, Books, Personal, PhD, Terminal,
+S.F.Ratio, perc.alumni, Expend, Grad.Rate</pre>
+<p>The Lasso estimates were also shrunk toward zero. Unlike ridge, Lasso can set coefficients exactly equal to zero, so it gives a more interpretable sparse model.</p>
+<h3>(f) Model preference</h3>
+<p>For this split, I prefer ridge slightly for prediction because its test MSPE was lower than the Lasso test MSPE. The difference was small, so I would not claim a large practical advantage from this one split.</p>
+<p>Ridge generally has lower variance because it shrinks correlated coefficients together, but it retains all variables and therefore is less interpretable. Lasso is more interpretable because it selects a smaller set of variables, but its estimates can be unstable when predictors are highly correlated. Neither model gives ordinary least-squares inference without additional assumptions because the penalty changes the estimator. If the main goal is prediction, I would use ridge here; if the main goal is a simpler explanatory model, I would consider the Lasso and validate its selected variables with repeated cross-validation.</p></body></html>
