@@ -1,0 +1,139 @@
+---
+title: "Simulations and Distributional Theory"
+author: "James"
+date: "10/6/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Looking at #2 on Homework 4**
+```{r}
+library(faraway)
+
+truck$B <- sapply(truck$B, function(x) ifelse(x=="-",-1,1))
+truck$C <- sapply(truck$C, function(x) ifelse(x=="-",-1,1))
+truck$D <- sapply(truck$D, function(x) ifelse(x=="-",-1,1))
+truck$E <- sapply(truck$E, function(x) ifelse(x=="-",-1,1))
+truck$O <- sapply(truck$O, function(x) ifelse(x=="-",-1,1))
+
+truck
+
+cor(truck) #calculate the pairwise correlations of the columns of truck 
+```
+
+##Ill-conditioned design matrices
+
+In many cases, the columns / predictors in $X$ share some sort of relationship. If, however, the columns of $X$ are *not* linearly independent, then the value of $(X^TX)^{-1}$ does not exist! This is the problem of **multi-collinearity**. If the columns are *nearly* linearly dependent, then we also run into issues with estimation. In fact the variance of the coefficients will increase significantly.
+
+**A case of exact linear dependence**
+
+```{r}
+a <- rnorm(n = 10) #10 random standard normal observations
+b <- rnorm(n = 10)
+c <- 2*a #perfect linear relationship / dependence
+
+X <- cbind(a,b,c) #design matrix
+
+#solve(t(X)%*%X) #(X^TX)^{-1} 
+
+#note - the above will throw an error that the matrix is exactly singular!
+
+
+#the system is exactly singular -- namely the third column is just 2 * the first
+
+```
+
+**A case with near linear dependence**
+
+```{r}
+a <- c(1, 2, 3)
+b <- c(1.25, 2.3, 3.27)
+c <- c(0.5, 0.8, 0.75)
+
+X <- cbind(a,b,c) #note that column b is almost a + 0.30
+
+solve(t(X)%*%X) #note that the diagonal terms of this are incredibly large.. why?
+
+y <- c(0.5, 1, 2.82) #this is arbitrary
+
+beta.hat <- solve(t(X)%*%X)%*%t(X)%*%y
+
+# = (-3.2, 4.89, -4.89)
+
+#what is the variance of these coefficients?
+
+#Recall that the variance of the estimators are just sigma^2 * the diagonal terms of (X^TX)^{-1}.
+
+#variance calculations:
+
+var.beta.hat <- var(y)*diag(solve(t(X)%*%X))
+# = (666.1, 722.1, 204.5)
+
+#these variances are incredibly high compared to the point estimates we get from the #normal equations. This suggests that the confidence interval for these parameters are incredibly wide and we are therefore uncertain of our estimates. 
+```
+
+
+##Features of the Normal Distribution##
+
+Up to now, we have not investigated the features of our multiple linear regression model when we assume that the error terms, $\epsilon_i$ are iid normally distributed. Estimation, for example, did not rely on any assumptions. Moreover, the properties of $\hat{y}$, $\hat{\epsilon}_i$, $\hat{\beta}$ that we've looked at, including the Gauss-Markov theorem, only assumed the weaker set of assumptions that 
+
+a) $E[\epsilon_i] = 0$
+b) $Var(\epsilon_i) = \sigma^2$
+c) $Cov(\epsilon_i, \epsilon_j) = 0$
+
+Recall that the assumption:
+
+$$\epsilon_1, \ldots, \epsilon_n \stackrel{iid}{\sim} N(0, \sigma^2)$$
+
+also has features (a) - (c) above. But additionally has a distribution describing the error terms. This is therefore a stronger assumption, and indeed the most common one made in practice. 
+
+##Key Reasons why we want to assume normality
+
+1) **Confidence intervals** for $E[y]$, $\beta$, and $\sigma^2$. Confidence intervals express the amount of *certainty* that we have in our estimates $\hat{y}$, $\hat{\beta}$, and $\hat{\sigma}^2$.
+
+
+Recall that confidence intervals for an unknown parameter $\mu$, with point estimator $\overline{x}$ are of the following form:
+
+$$ \mu \in \{\overline{x} \pm t_{n-1, \alpha/2} * s.e (\overline{x})\} $$
+
+Note that the above confidence interval is an example for the mean parameter $\mu$, but **all** confidence intervals require the following components:
+
+a) unknown parameter - this is what we are trying to develop an interval for in the first place. For us, we'll be looking at $E[y]$, $\beta_j$, and $\sigma^2$.
+
+b) estimator for the parameter -- above we used $\overline{x}$.
+
+c) standard error / standard deviation of our estimator -- above we looked at $s.e(\overline{x})$
+
+d) probability distribution describing our estimator -- for the sample mean $\overline{x}$, this is just the $t$-distribution.
+
+e) level of confidence: $1 - \alpha$ -- this gives our interpretation of the interval: *with $1 - \alpha$ percent confidence, the parameter $mu$ falls in the interval given by 
+
+$\{\overline{x} \pm t_{n-1, \alpha/2} * s.e (\overline{x})\}$
+*
+
+In more specific terms -- **a 95% confidence interval is an interval for which if new samples of data were collected many many times, the parameter would fall in the interval given 95% of the time.**
+
+Note -- right now, we just don't have component (d). That's what we'll work on here.
+
+2) **Prediction Intervals**: essentially this is a confidence interval for new values of the response that we do not see in our training data set. That is, we would like to develop a confidence interval for external predictions $\hat{y}^*$ given new data $X^*$. 
+
+3) **Notions of statistical significance and hypothesis tests**: We would like to be able to test whether or not a parameter is statistically different than 0. For example, we may test the null hypothesis:
+
+$$H_o: \beta_1 = 0,$$
+If we reject $H_o$, then we can say that $\beta_1$ **is statistically significant**, that is it is different than 0. 
+
+Note that if we find that $\beta_1$ is statistically significant, then this means that there is a statistical relationship between the variable $x_1$ and the response $y$ -- many will say that $x_1$ has a significant effect on $y$.
+
+It turns out that these types of hypothesis tests are strongly related to the confidence intervals in (1). We will only need to figure out the probability distributions of our estimators. 
+
+
+##Our Goals
+
+1) Probability distribution for $\hat{\sigma}^2 = MSE(\hat{y})$
+2) Probability distribution for $\hat{y}_j$
+3) Probability distribution for $\hat{\beta}_j$
+
+For now, think about how we can get to the distribution of each of these estimators if we assume that our errors are normally distributed. 
